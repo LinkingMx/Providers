@@ -17,44 +17,61 @@ class UserObserver
      */
     public function created(User $user): void
     {
-        // Find the default document status that will be assigned to all new document requirements
-        // This is typically 'Pendiente' status indicating documents are awaiting submission
-        $defaultStatusId = DocumentStatus::where('is_default', true)->firstOrFail()->id;
-
-        // Check if the newly created user has the 'provider' role
+        // Check if the newly created user has the 'Provider' role (with capital P)
         // Only providers need document requirements, so we skip this process for regular users
-        if ($user->hasRole('provider')) {
-            // Get all active document types that are currently available in the system
-            // Inactive document types are excluded to prevent assignment of deprecated requirements
-            $activeDocumentTypeIds = DocumentType::where('is_active', true)->pluck('id')->toArray();
-
-            // Create the pivot data array for bulk attachment
-            // Each document type gets assigned with the default status and current timestamp
-            $pivotData = [];
-            foreach ($activeDocumentTypeIds as $documentTypeId) {
-                $pivotData[$documentTypeId] = [
-                    'document_status_id' => $defaultStatusId,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                    // Note: file_path, uploaded_at, expires_at, and rejection_reason remain null
-                    // These will be populated when the provider actually submits documents
-                ];
-            }
-
-            // Bulk attach all active document types to the new provider
-            // This creates entries in the provider_documents pivot table
-            if (! empty($pivotData)) {
-                $user->documentRequirements()->attach($pivotData);
-            }
+        if ($user->hasRole('Provider')) {
+            $this->assignProviderDocuments($user);
         }
     }
 
     /**
      * Handle the User "updated" event.
+     *
+     * This method is triggered when a user is updated, including when roles are assigned.
+     * It checks if the user just received the 'Provider' role and ensures they have
+     * the proper provider profile and document requirements.
      */
     public function updated(User $user): void
     {
-        //
+        // Check if the user now has the 'Provider' role and doesn't have documents assigned
+        if ($user->hasRole('Provider') && $user->documentRequirements()->count() === 0) {
+            $this->assignProviderDocuments($user);
+        }
+    }
+
+    /**
+     * Assign document requirements to a provider user.
+     *
+     * This is a shared method used by both created() and updated() events
+     * to ensure consistent document assignment logic.
+     */
+    private function assignProviderDocuments(User $user): void
+    {
+        // Find the default document status
+        $defaultStatusId = DocumentStatus::where('is_default', true)->firstOrFail()->id;
+
+        // Create provider profile if it doesn't exist
+        if (! $user->providerProfile) {
+            $user->providerProfile()->create([
+                'business_name' => $user->name,
+            ]);
+        }
+
+        // Get all active document types
+        $activeDocumentTypeIds = DocumentType::where('is_active', true)->pluck('id')->toArray();
+
+        // Create the pivot data array for bulk attachment
+        $pivotData = [];
+        foreach ($activeDocumentTypeIds as $documentTypeId) {
+            $pivotData[$documentTypeId] = [
+                'document_status_id' => $defaultStatusId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        // Bulk attach all document types with default status
+        $user->documentRequirements()->attach($pivotData);
     }
 
     /**

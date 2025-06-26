@@ -21,6 +21,14 @@ class DocumentsToReviewWidget extends BaseWidget
     protected static ?int $sort = 2;
 
     /**
+     * Only allow access to administrators and super_admins
+     */
+    public static function canView(): bool
+    {
+        return auth()->user()?->hasAnyRole(['super_admin', 'admin']) ?? false;
+    }
+
+    /**
      * Configure the table for documents awaiting review.
      *
      * This widget serves as the admin's to-do list, showing all documents

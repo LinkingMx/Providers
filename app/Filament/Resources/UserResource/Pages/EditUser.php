@@ -97,4 +97,36 @@ class EditUser extends EditRecord
     {
         return null;
     }
+
+    /**
+     * Hook called after the record has been updated and saved to the database.
+     *
+     * This method handles post-update logic including:
+     * - Automatic assignment of document requirements when Provider role is assigned
+     * - Automatic removal of document requirements when Provider role is removed
+     */
+    protected function afterSave(): void
+    {
+        if ($this->record->hasRole('Provider')) {
+            // User HAS Provider role - assign documents if they don't have any
+            if ($this->record->documentRequirements()->count() === 0) {
+                \Artisan::call('provider:assign-documents', ['email' => $this->record->email]);
+            }
+        } else {
+            // User DOES NOT have Provider role - remove all document requirements and profile
+            if ($this->record->documentRequirements()->count() > 0) {
+                // Use our clean command to remove documents and profile
+                \Artisan::call('provider:clean-documents', ['email' => $this->record->email]);
+
+                // Show notification about cleanup
+                \Filament\Notifications\Notification::make()
+                    ->warning()
+                    ->title('Documentos de proveedor eliminados')
+                    ->body('Se han eliminado los documentos requeridos porque el usuario ya no tiene rol de Provider.')
+                    ->icon('heroicon-o-document-minus')
+                    ->duration(5000)
+                    ->send();
+            }
+        }
+    }
 }

@@ -28,9 +28,9 @@ class DocumentTypeObserver
         // This is typically 'Pendiente' status indicating documents are awaiting submission
         $defaultStatusId = DocumentStatus::where('is_default', true)->firstOrFail()->id;
 
-        // Get all users who have the 'provider' role
+        // Get all users who have the 'Provider' role (with capital P)
         // These are the users who need document requirements and compliance tracking
-        $providers = User::role('provider')->get();
+        $providers = User::role('Provider')->get();
 
         // Iterate through each provider and assign the new document type requirement
         foreach ($providers as $provider) {

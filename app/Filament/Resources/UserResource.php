@@ -22,7 +22,7 @@ class UserResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
     // Spanish labels for the resource
-    protected static ?string $navigationLabel = 'Usuarios';
+    protected static ?string $navigationLabel = 'Usuarios / Proveedores';
 
     protected static ?string $modelLabel = 'Usuario';
 

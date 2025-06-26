@@ -9,6 +9,14 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 class StatsOverviewWidget extends BaseWidget
 {
     /**
+     * Only allow access to administrators and super_admins
+     */
+    public static function canView(): bool
+    {
+        return auth()->user()?->hasAnyRole(['super_admin', 'Admin']) ?? false;
+    }
+
+    /**
      * Get the statistics for the admin dashboard.
      *
      * Provides key metrics about document compliance and workflow status

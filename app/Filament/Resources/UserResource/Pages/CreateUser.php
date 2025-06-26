@@ -56,6 +56,21 @@ class CreateUser extends CreateRecord
     }
 
     /**
+     * Hook called after the record has been created and saved to the database.
+     *
+     * This method handles post-creation logic including automatic assignment
+     * of document requirements for providers.
+     */
+    protected function afterCreate(): void
+    {
+        // Check if the created user has the Provider role
+        if ($this->record->hasRole('Provider')) {
+            // Automatically assign document requirements
+            \Artisan::call('provider:assign-documents', ['email' => $this->record->email]);
+        }
+    }
+
+    /**
      * Override the created notification to provide custom notification
      * for when a user is successfully created
      */

@@ -189,8 +189,7 @@ class UserResource extends Resource
     public static function getRelations(): array
     {
         return [
-            // TODO: Add DocumentRequirementsRelationManager when created
-            // RelationManagers\DocumentRequirementsRelationManager::class,
+            RelationManagers\DocumentRequirementsRelationManager::class,
         ];
     }
 

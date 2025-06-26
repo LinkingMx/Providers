@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -45,5 +47,59 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the provider profile associated with this user.
+     *
+     * This defines a one-to-one relationship where a user can have
+     * at most one provider profile. This relationship is optional,
+     * as not all users are necessarily providers.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne<ProviderProfile>
+     */
+    public function providerProfile(): HasOne
+    {
+        return $this->hasOne(ProviderProfile::class);
+    }
+
+    /**
+     * Check if this user has a provider profile.
+     *
+     * This is a convenience method to quickly determine if the user
+     * is registered as a provider in the system.
+     *
+     * @return bool True if the user has a provider profile, false otherwise
+     */
+    public function isProvider(): bool
+    {
+        return $this->providerProfile()->exists();
+    }
+
+    /**
+     * Get the document requirements for this user (provider documents).
+     *
+     * This defines a many-to-many relationship between users and document types
+     * through the provider_documents pivot table. This relationship tracks
+     * all document requirements for a provider including their status,
+     * file information, and expiration dates.
+     *
+     * The pivot model (ProviderDocument) provides additional functionality
+     * for managing document lifecycle, status transitions, and business logic.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<DocumentType>
+     */
+    public function documentRequirements(): BelongsToMany
+    {
+        return $this->belongsToMany(DocumentType::class, 'provider_documents')
+            ->using(ProviderDocument::class)
+            ->withPivot([
+                'document_status_id',
+                'file_path',
+                'uploaded_at',
+                'expires_at',
+                'rejection_reason',
+            ])
+            ->withTimestamps();
     }
 }

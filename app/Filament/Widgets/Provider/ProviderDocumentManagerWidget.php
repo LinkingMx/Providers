@@ -3,16 +3,13 @@
 namespace App\Filament\Widgets\Provider;
 
 use App\Models\DocumentStatus;
+use App\Models\ProviderDocument;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Tables;
-use Filament\Tables\Actions\Action;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Provider Document Manager Widget
@@ -57,16 +54,13 @@ class ProviderDocumentManagerWidget extends BaseWidget
     {
         return $table
             ->query(
-                // Query the authenticated user's provider documents directly
-                // Excludes documents with 'No Aplica' status as these are not mandatory
-                function () {
-                    return \App\Models\ProviderDocument::where('user_id', Auth::id())
-                        ->whereHas('documentStatus', function ($query) {
-                            $query->where('name', '!=', 'No Aplica');
-                        })
-                        ->with(['documentType', 'documentStatus']) // Eager load related models
-                        ->orderByRaw('(SELECT name FROM document_types WHERE document_types.id = provider_documents.document_type_id)'); // Alphabetical ordering
-                }
+                ProviderDocument::query()
+                    ->where('user_id', Auth::id())
+                    ->whereHas('documentStatus', function ($query) {
+                        $query->where('name', '!=', 'No Aplica');
+                    })
+                    ->with(['documentType', 'documentStatus'])
+                    ->orderBy('document_type_id')
             )
             ->columns([
                 // Document type name - what document is required
@@ -80,11 +74,11 @@ class ProviderDocumentManagerWidget extends BaseWidget
                 // Document description - explains what the document is for
                 Tables\Columns\TextColumn::make('documentType.description')
                     ->label('Descripción')
-                    ->limit(100)
+                    ->limit(80)
                     ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
                         $state = $column->getState();
 
-                        return strlen($state) > 100 ? $state : null;
+                        return strlen($state) > 80 ? $state : null;
                     })
                     ->wrap(),
 
@@ -98,15 +92,14 @@ class ProviderDocumentManagerWidget extends BaseWidget
                 // Upload timestamp - when the document was last uploaded
                 Tables\Columns\TextColumn::make('uploaded_at')
                     ->label('Subido')
-                    ->dateTime()
-                    ->since()
+                    ->dateTime('d/m/Y H:i')
                     ->placeholder('No subido')
                     ->sortable(),
 
                 // Expiration date for completed documents
                 Tables\Columns\TextColumn::make('expires_at')
                     ->label('Vence')
-                    ->date()
+                    ->date('d/m/Y')
                     ->placeholder('No expira')
                     ->color(fn ($state) => $state && now()->diffInDays($state) < 30 ? 'warning' : null),
 
@@ -128,8 +121,8 @@ class ProviderDocumentManagerWidget extends BaseWidget
                 // Filter by document status for easier management
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Estado')
-                    ->options(\App\Models\DocumentStatus::pluck('name', 'id'))
-                    ->query(function (Builder $query, array $data): Builder {
+                    ->options(DocumentStatus::pluck('name', 'id'))
+                    ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data): \Illuminate\Database\Eloquent\Builder {
                         if (isset($data['value']) && $data['value'] !== '') {
                             return $query->where('document_status_id', $data['value']);
                         }
@@ -140,36 +133,31 @@ class ProviderDocumentManagerWidget extends BaseWidget
             ])
             ->actions([
                 // View uploaded file action - only visible when file exists
-                Action::make('view')
-                    ->label('Ver Mi Archivo')
+                Tables\Actions\Action::make('view')
+                    ->label('Ver Archivo')
                     ->icon('heroicon-o-eye')
                     ->color('info')
-                    ->visible(fn (Model $record): bool => ! empty($record->file_path))
-                    ->url(fn (Model $record): string => Storage::url($record->file_path))
+                    ->visible(fn (\Illuminate\Database\Eloquent\Model $record): bool => ! empty($record->file_path))
+                    ->url(fn (\Illuminate\Database\Eloquent\Model $record): string => asset('storage/'.$record->file_path))
                     ->openUrlInNewTab()
                     ->tooltip('Abrir archivo en nueva pestaña'),
 
                 // Upload file action - for pending or rejected documents
-                Action::make('upload')
+                Tables\Actions\Action::make('upload')
                     ->label('Subir Archivo')
                     ->icon('heroicon-o-arrow-up-tray')
                     ->color('primary')
-                    ->visible(function (Model $record): bool {
-                        // Only show for documents that can be uploaded
+                    ->visible(function (\Illuminate\Database\Eloquent\Model $record): bool {
                         $statusName = $record->documentStatus?->name;
 
                         return in_array($statusName, ['Pendiente', 'Rechazado']);
                     })
                     ->form([
-                        // File upload field with dynamic validation based on document type
                         Forms\Components\FileUpload::make('file')
                             ->label('Seleccionar archivo')
                             ->required()
-                            ->acceptedFileTypes(function (Model $record) {
-                                // Get allowed file types from the document type
+                            ->acceptedFileTypes(function (\Illuminate\Database\Eloquent\Model $record) {
                                 $allowedTypes = $record->documentType->allowed_file_types ?? [];
-
-                                // Convert extensions to MIME types for validation
                                 $mimeTypes = [];
                                 foreach ($allowedTypes as $type) {
                                     $mimeTypes[] = match (strtolower($type)) {
@@ -179,8 +167,6 @@ class ProviderDocumentManagerWidget extends BaseWidget
                                         'gif' => 'image/gif',
                                         'doc' => 'application/msword',
                                         'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                                        'xml' => 'application/xml',
-                                        'txt' => 'text/plain',
                                         default => "application/{$type}",
                                     };
                                 }
@@ -191,22 +177,14 @@ class ProviderDocumentManagerWidget extends BaseWidget
                             ->disk('public')
                             ->directory('provider-documents')
                             ->visibility('public')
-                            ->helperText(function (Model $record) {
+                            ->helperText(function (\Illuminate\Database\Eloquent\Model $record) {
                                 $types = implode(', ', $record->documentType->allowed_file_types ?? []);
 
                                 return "Tipos permitidos: {$types}. Tamaño máximo: 10MB.";
                             }),
                     ])
-                    ->action(function (Model $record, array $data): void {
+                    ->action(function (\Illuminate\Database\Eloquent\Model $record, array $data): void {
                         try {
-                            // Log for debugging
-                            \Log::info('Upload action triggered', [
-                                'record_id' => $record->id,
-                                'file_data' => $data['file'] ?? 'No file',
-                                'file_type' => gettype($data['file'] ?? null),
-                            ]);
-
-                            // In Filament, FileUpload with disk('public') stores the file directly
                             $filePath = $data['file'];
 
                             // Find the 'En Revisión' status ID
@@ -237,11 +215,6 @@ class ProviderDocumentManagerWidget extends BaseWidget
                                 ->send();
 
                         } catch (\Exception $e) {
-                            \Log::error('Upload action failed', [
-                                'error' => $e->getMessage(),
-                                'trace' => $e->getTraceAsString(),
-                            ]);
-
                             // Send error notification
                             Notification::make()
                                 ->danger()
@@ -252,7 +225,7 @@ class ProviderDocumentManagerWidget extends BaseWidget
                                 ->send();
                         }
                     })
-                    ->modalHeading(fn (Model $record): string => "Subir: {$record->documentType->name}")
+                    ->modalHeading(fn (\Illuminate\Database\Eloquent\Model $record): string => "Subir: {$record->documentType->name}")
                     ->modalSubmitActionLabel('Subir Documento')
                     ->modalWidth('md'),
             ])

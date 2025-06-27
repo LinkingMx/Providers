@@ -18,7 +18,7 @@ class Dashboard extends BaseDashboard
      */
     public static function canAccess(): bool
     {
-        return ! auth()->user()?->hasRole('Provider') ?? true;
+        return auth()->check() && ! auth()->user()->hasRole('Provider');
     }
 
     /**

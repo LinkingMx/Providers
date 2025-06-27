@@ -91,7 +91,7 @@ class UserResource extends Resource
                 ])
                     ->hidden(function (Get $get): bool {
                         // Get the provider role ID
-                        $providerRole = Role::where('name', 'provider')->first();
+                        $providerRole = Role::where('name', 'Provider')->first();
 
                         // If no provider role exists, hide the fields
                         if (! $providerRole) {
@@ -129,8 +129,9 @@ class UserResource extends Resource
                     ->label('Roles')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'admin' => 'danger',
-                        'provider' => 'success',
+                        'Admin' => 'danger',
+                        'Provider' => 'success',
+                        'super_admin' => 'warning',
                         'user' => 'gray',
                         default => 'primary',
                     })

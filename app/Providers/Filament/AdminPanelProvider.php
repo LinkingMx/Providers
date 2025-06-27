@@ -3,7 +3,6 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Dashboard;
-use App\Filament\Pages\ProviderDashboard;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -30,16 +29,22 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->colors([
-                'primary' => Color::Amber,
+                'danger' => Color::Rose,
+                'gray' => Color::Gray,
+                'info' => Color::Blue,
+                'primary' => Color::Indigo,
+                'success' => Color::Emerald,
+                'warning' => Color::Orange,
             ])
             // Role-based home URL redirection after login
             // Providers are sent to their dedicated dashboard, while admins go to the main admin panel
-            ->homeUrl(fn (): string => auth()->user()->hasRole('Provider') ? ProviderDashboard::getUrl() : '/admin')
+            ->homeUrl(fn (): string => auth()->user()->hasRole('Provider') ? '/admin/provider-dashboard' : '/admin')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 // Use our custom Dashboard that controls access by role
                 \App\Filament\Pages\Dashboard::class,
+                \App\Filament\Pages\ProviderDashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([

@@ -129,4 +129,23 @@ class EditUser extends EditRecord
             }
         }
     }
+
+    /**
+     * Mutate form data before filling the form.
+     *
+     * This method ensures that provider profile data is loaded into the form
+     * when editing a user with a provider profile.
+     */
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        // Load provider profile data if it exists
+        if ($this->record->providerProfile) {
+            $data['providerProfile'] = [
+                'rfc' => $this->record->providerProfile->rfc,
+                'business_name' => $this->record->providerProfile->business_name,
+            ];
+        }
+
+        return $data;
+    }
 }

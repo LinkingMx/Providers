@@ -32,41 +32,54 @@ class CreateUser extends CreateRecord
      */
     protected function handleRecordCreation(array $data): Model
     {
-        // Extract provider profile data from the nested structure
-        $providerData = $data['providerProfile'] ?? [];
+        $rfc = $data['rfc'] ?? null;
+        $businessName = $data['business_name'] ?? null;
+        $providerTypeId = $data['provider_type_id'] ?? null;
+        $roles = $data['roles'] ?? [];
 
-        // Remove provider profile data from main user data to avoid conflicts
-        unset($data['providerProfile']);
+        unset($data['rfc'], $data['business_name'], $data['provider_type_id']);
 
-        // Create the user record with main user data (name, email, password)
         $user = User::create($data);
 
-        // If RFC exists and is not null, create a provider profile
-        if (! empty($providerData['rfc'])) {
-            // Create the provider profile record
-            ProviderProfile::create([
-                'user_id' => $user->id,
-                'rfc' => $providerData['rfc'],
-                'business_name' => $providerData['business_name'] ?? null,
-            ]);
+        // Assign roles and refresh the user model to ensure roles are loaded.
+        if (! empty($roles)) {
+            $user->roles()->sync($roles);
+            $user = $user->fresh();
         }
 
-        // Return the created user object
+        // Store provider-specific data in a temporary property to be used in afterCreate
+        $user->temp_provider_data = [
+            'rfc' => $rfc,
+            'business_name' => $businessName,
+            'provider_type_id' => $providerTypeId,
+        ];
+
         return $user;
     }
 
-    /**
-     * Hook called after the record has been created and saved to the database.
-     *
-     * This method handles post-creation logic including automatic assignment
-     * of document requirements for providers.
-     */
     protected function afterCreate(): void
     {
-        // Check if the created user has the Provider role
-        if ($this->record->hasRole('Provider')) {
-            // Automatically assign document requirements
-            \Artisan::call('provider:assign-documents', ['email' => $this->record->email]);
+        $user = $this->record; // The created user record
+
+        // Retrieve provider-specific data from the temporary property
+        $rfc = $user->temp_provider_data['rfc'] ?? null;
+        $businessName = $user->temp_provider_data['business_name'] ?? null;
+        $providerTypeId = $user->temp_provider_data['provider_type_id'] ?? null;
+
+        // If the user is a Provider, create their profile and dispatch the document assignment job.
+        // At this point, roles are fully persisted and loaded.
+        if ($user->hasRole('Provider')) {
+            ProviderProfile::create([
+                'user_id' => $user->id,
+                'rfc' => $rfc,
+                'business_name' => $businessName,
+                'provider_type_id' => $providerTypeId,
+            ]);
+
+            // Dispatch the job to assign documents.
+            // The job itself will handle checking for the provider_type_id and active documents.
+            \Illuminate\Support\Facades\Log::debug('[CreateUser] User has provider role. Dispatching AssignProviderDocumentsJob.', ['user_id' => $user->id, 'provider_type_id' => $providerTypeId]);
+            \App\Jobs\AssignProviderDocumentsJob::dispatch($user->fresh());
         }
     }
 

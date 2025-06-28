@@ -92,4 +92,12 @@ class DocumentType extends Model
     {
         return implode(', ', $this->allowed_file_types ?? []);
     }
+
+    /**
+     * The provider types that belong to the document type.
+     */
+    public function providerTypes()
+    {
+        return $this->belongsToMany(ProviderType::class, 'document_type_provider_type');
+    }
 }

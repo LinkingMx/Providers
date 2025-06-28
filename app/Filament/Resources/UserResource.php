@@ -6,6 +6,7 @@ use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers;
 use App\Models\User;
 use Filament\Forms;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Resources\Resource;
@@ -35,76 +36,78 @@ class UserResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->label('Nombre')
-                    ->required()
-                    ->maxLength(255)
-                    ->helperText('Nombre completo del usuario'),
+                Section::make('Información general')
+                    ->description('Datos básicos y credenciales de acceso del usuario o proveedor.')
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Nombre')
+                            ->required()
+                            ->maxLength(255)
+                            ->helperText('Nombre completo del usuario'),
+                        Forms\Components\TextInput::make('email')
+                            ->label('Correo electrónico')
+                            ->email()
+                            ->required()
+                            ->unique(User::class, 'email', ignoreRecord: true)
+                            ->maxLength(255)
+                            ->helperText('Dirección de correo electrónico única del usuario'),
+                        Forms\Components\TextInput::make('password')
+                            ->label('Contraseña')
+                            ->password()
+                            ->required(fn (string $operation): bool => $operation === 'create')
+                            ->dehydrated(fn (?string $state): bool => filled($state))
+                            ->dehydrateStateUsing(fn (string $state): string => Hash::make($state))
+                            ->confirmed()
+                            ->minLength(8)
+                            ->helperText('Mínimo 8 caracteres. Requerida solo al crear nuevos usuarios'),
+                        Forms\Components\TextInput::make('password_confirmation')
+                            ->label('Confirmar contraseña')
+                            ->password()
+                            ->required(fn (string $operation): bool => $operation === 'create')
+                            ->dehydrated(false)
+                            ->helperText('Debe coincidir con la contraseña ingresada arriba'),
+                        Forms\Components\Select::make('roles')
+                            ->label('Roles')
+                            ->relationship('roles', 'name')
+                            ->multiple()
+                            ->preload()
+                            ->live()
+                            ->helperText('Selecciona los roles que tendrá este usuario en el sistema'),
+                    ])
+                    ->columns(2)
+                    ->aside(),
 
-                Forms\Components\TextInput::make('email')
-                    ->label('Correo electrónico')
-                    ->email()
-                    ->required()
-                    ->unique(User::class, 'email', ignoreRecord: true)
-                    ->maxLength(255)
-                    ->helperText('Dirección de correo electrónico única del usuario'),
-
-                Forms\Components\TextInput::make('password')
-                    ->label('Contraseña')
-                    ->password()
-                    ->required(fn (string $operation): bool => $operation === 'create')
-                    ->dehydrated(fn (?string $state): bool => filled($state))
-                    ->dehydrateStateUsing(fn (string $state): string => Hash::make($state))
-                    ->confirmed()
-                    ->minLength(8)
-                    ->helperText('Mínimo 8 caracteres. Requerida solo al crear nuevos usuarios'),
-
-                Forms\Components\TextInput::make('password_confirmation')
-                    ->label('Confirmar contraseña')
-                    ->password()
-                    ->required(fn (string $operation): bool => $operation === 'create')
-                    ->dehydrated(false)
-                    ->helperText('Debe coincidir con la contraseña ingresada arriba'),
-
-                Forms\Components\Select::make('roles')
-                    ->label('Roles')
-                    ->relationship('roles', 'name')
-                    ->multiple()
-                    ->preload()
-                    ->live() // Make it reactive for conditional fields
-                    ->helperText('Selecciona los roles que tendrá este usuario en el sistema'),
-
-                // Group for provider-specific fields that are conditionally visible
-                Forms\Components\Group::make([
-                    Forms\Components\TextInput::make('providerProfile.rfc')
-                        ->label('RFC')
-                        ->required()
-                        ->maxLength(13)
-                        ->minLength(10)
-                        ->helperText('Registro Federal de Contribuyentes (RFC) del proveedor')
-                        ->placeholder('Ej: XAXX010101000'),
-
-                    Forms\Components\TextInput::make('providerProfile.business_name')
-                        ->label('Razón social')
-                        ->maxLength(255)
-                        ->helperText('Nombre comercial o razón social del proveedor (opcional)'),
-                ])
+                Section::make('Datos de proveedor')
+                    ->description('Información fiscal y tipo de proveedor. Visible solo si el usuario tiene el rol de proveedor.')
+                    ->schema([
+                        Forms\Components\TextInput::make('rfc')
+                            ->label('RFC')
+                            ->maxLength(13)
+                            ->minLength(10)
+                            ->helperText('Registro Federal de Contribuyentes (RFC) del proveedor')
+                            ->placeholder('Ej: XAXX010101000'),
+                        Forms\Components\TextInput::make('business_name')
+                            ->label('Razón social')
+                            ->maxLength(255)
+                            ->helperText('Nombre comercial o razón social del proveedor (opcional)'),
+                        Forms\Components\Select::make('provider_type_id')
+                            ->label('Tipo de Proveedor')
+                            ->options(fn () => \App\Models\ProviderType::pluck('name', 'id')->toArray())
+                            ->searchable()
+                            ->preload()
+                            ->helperText('Selecciona el tipo de proveedor'),
+                    ])
                     ->hidden(function (Get $get): bool {
-                        // Get the provider role ID
                         $providerRole = Role::where('name', 'Provider')->first();
-
-                        // If no provider role exists, hide the fields
                         if (! $providerRole) {
                             return true;
                         }
-
-                        // Get selected roles
                         $selectedRoles = $get('roles') ?? [];
 
-                        // Show fields only if provider role is selected
                         return ! in_array($providerRole->id, $selectedRoles);
                     })
-                    ->columnSpanFull(),
+                    ->columns(2)
+                    ->collapsible(),
             ])
             ->columns(2);
     }
@@ -141,6 +144,12 @@ class UserResource extends Resource
                     ->label('RFC')
                     ->placeholder('No aplica')
                     ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('providerProfile.providerType.name')
+                    ->label('Tipo de Proveedor')
+                    ->badge()
+                    ->color('info')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('email_verified_at')
                     ->label('Email verificado')
@@ -190,7 +199,7 @@ class UserResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\DocumentRequirementsRelationManager::class,
+            // RelationManagers\DocumentRequirementsRelationManager::class,
         ];
     }
 
@@ -201,5 +210,29 @@ class UserResource extends Resource
             'create' => Pages\CreateUser::route('/create'),
             'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
+    }
+
+    public static function mutateFormDataBeforeFill(array $data): array
+    {
+        // Si existe providerProfile, extraer los campos planos
+        if (isset($data['providerProfile'])) {
+            $data['rfc'] = $data['providerProfile']['rfc'] ?? null;
+            $data['business_name'] = $data['providerProfile']['business_name'] ?? null;
+            $data['provider_type_id'] = $data['providerProfile']['provider_type_id'] ?? null;
+        }
+
+        return $data;
+    }
+
+    public static function mutateFormDataBeforeCreate(array $data): array
+    {
+        // No hacer nada especial aquí, se maneja en la Page
+        return $data;
+    }
+
+    public static function mutateFormDataBeforeSave(array $data): array
+    {
+        // No hacer nada especial aquí, se maneja en la Page
+        return $data;
     }
 }

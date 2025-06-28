@@ -47,32 +47,27 @@ class EditUser extends EditRecord
      */
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        // Extract provider profile data from the nested structure
-        $providerData = $data['providerProfile'] ?? [];
+        $rfc = $data['rfc'] ?? null;
+        $businessName = $data['business_name'] ?? null;
+        $providerTypeId = $data['provider_type_id'] ?? null;
 
-        // Remove provider profile data from main user data to avoid conflicts
-        unset($data['providerProfile']);
+        unset($data['rfc'], $data['business_name'], $data['provider_type_id']);
 
-        // Update the user record with main user data (name, email, password if provided)
         $record->update($data);
 
-        // If RFC exists and is not null, create or update the provider profile
-        if (! empty($providerData['rfc'])) {
-            // Use updateOrCreate to handle both creation and update scenarios
+        if (! empty($rfc)) {
             $record->providerProfile()->updateOrCreate(
-                ['user_id' => $record->id], // Search criteria
+                ['user_id' => $record->id],
                 [
-                    'rfc' => $providerData['rfc'],
-                    'business_name' => $providerData['business_name'] ?? null,
+                    'rfc' => $rfc,
+                    'business_name' => $businessName,
+                    'provider_type_id' => $providerTypeId,
                 ]
             );
         } else {
-            // If RFC is removed/empty, we might want to delete the provider profile
-            // This handles the case where a user is changed from provider to regular user
             $record->providerProfile()?->delete();
         }
 
-        // Return the updated user record
         return $record;
     }
 
@@ -108,10 +103,8 @@ class EditUser extends EditRecord
     protected function afterSave(): void
     {
         if ($this->record->hasRole('Provider')) {
-            // User HAS Provider role - assign documents if they don't have any
-            if ($this->record->documentRequirements()->count() === 0) {
-                \Artisan::call('provider:assign-documents', ['email' => $this->record->email]);
-            }
+            // User HAS Provider role - assign documents. The job will not re-assign if they already exist.
+            \App\Jobs\AssignProviderDocumentsJob::dispatch($this->record->fresh());
         } else {
             // User DOES NOT have Provider role - remove all document requirements and profile
             if ($this->record->documentRequirements()->count() > 0) {
@@ -138,12 +131,11 @@ class EditUser extends EditRecord
      */
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        // Load provider profile data if it exists
+        // Poblar los campos planos si existe providerProfile
         if ($this->record->providerProfile) {
-            $data['providerProfile'] = [
-                'rfc' => $this->record->providerProfile->rfc,
-                'business_name' => $this->record->providerProfile->business_name,
-            ];
+            $data['rfc'] = $this->record->providerProfile->rfc;
+            $data['business_name'] = $this->record->providerProfile->business_name;
+            $data['provider_type_id'] = $this->record->providerProfile->provider_type_id;
         }
 
         return $data;

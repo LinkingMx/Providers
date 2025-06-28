@@ -38,6 +38,7 @@ class ProviderProfile extends Model
         'user_id',
         'rfc',
         'business_name',
+        'provider_type_id', // Add this line
     ];
 
     /**
@@ -51,6 +52,14 @@ class ProviderProfile extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the provider type for this profile.
+     */
+    public function providerType(): BelongsTo
+    {
+        return $this->belongsTo(ProviderType::class);
     }
 
     /**

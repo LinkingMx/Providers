@@ -4,7 +4,6 @@ namespace App\Observers;
 
 use App\Models\DocumentStatus;
 use App\Models\DocumentType;
-use App\Models\User;
 
 class DocumentTypeObserver
 {
@@ -28,9 +27,18 @@ class DocumentTypeObserver
         // This is typically 'Pendiente' status indicating documents are awaiting submission
         $defaultStatusId = DocumentStatus::where('is_default', true)->firstOrFail()->id;
 
-        // Get all users who have the 'Provider' role (with capital P)
-        // These are the users who need document requirements and compliance tracking
-        $providers = User::role('Provider')->get();
+        // Obtener los tipos de proveedor asociados a este tipo de documento
+        $providerTypeIds = $documentType->providerTypes()->pluck('provider_types.id')->toArray();
+        if (empty($providerTypeIds)) {
+            return; // No asignar a nadie si no hay tipos asociados
+        }
+
+        // Obtener solo los usuarios con el tipo de proveedor correspondiente
+        $providers = \App\Models\User::whereHas('providerProfile', function ($query) use ($providerTypeIds) {
+            $query->whereIn('provider_type_id', $providerTypeIds);
+        })->whereHas('roles', function ($query) {
+            $query->where('name', 'Provider');
+        })->get();
 
         // Iterate through each provider and assign the new document type requirement
         foreach ($providers as $provider) {

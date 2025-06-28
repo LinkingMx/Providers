@@ -17,6 +17,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -28,17 +29,37 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->font('Poppins')
+            ->brandLogo(fn () => view('filament.admin.logo'))
             ->colors([
                 'danger' => Color::Rose,
                 'gray' => Color::Gray,
                 'info' => Color::Blue,
-                'primary' => Color::Indigo,
+                'primary' => Color::Orange,
                 'success' => Color::Emerald,
                 'warning' => Color::Orange,
             ])
             // Role-based home URL redirection after login
             // Providers are sent to their dedicated dashboard, while admins go to the main admin panel
-            ->homeUrl(fn (): string => auth()->user()->hasRole('Provider') ? '/admin/provider-dashboard' : '/admin')
+            ->homeUrl(function (): string {
+                $user = auth()->user();
+
+                if ($user) {
+                    // Ensure the user model is fresh to get the latest roles
+                    $user->load('roles'); // Eager load roles relationship
+                    Log::info('User logged in: '.$user->email.' with roles: '.implode(', ', $user->getRoleNames()->toArray()));
+
+                    if ($user->hasRole('Provider')) {
+                        Log::info('Redirecting Provider user to /admin/provider-dashboard');
+
+                        return '/admin/provider-dashboard';
+                    }
+                }
+
+                Log::info('Redirecting non-Provider user to /admin');
+
+                return '/admin';
+            })
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([

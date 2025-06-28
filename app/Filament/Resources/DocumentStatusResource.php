@@ -30,42 +30,53 @@ class DocumentStatusResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->label('Nombre')
-                    ->required()
-                    ->maxLength(255)
-                    ->unique(DocumentStatus::class, 'name', ignoreRecord: true),
+                \Filament\Forms\Components\Section::make('Información del estado')
+                    ->description('Define el nombre, color, icono y propiedades clave del estado de documento.')
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Nombre')
+                            ->required()
+                            ->maxLength(255)
+                            ->unique(DocumentStatus::class, 'name', ignoreRecord: true)
+                            ->helperText('Nombre único y representativo para el estado.'),
+                        Forms\Components\Select::make('color')
+                            ->label('Color')
+                            ->required()
+                            ->options([
+                                'primary' => 'Primario',
+                                'success' => 'Éxito',
+                                'warning' => 'Advertencia',
+                                'danger' => 'Peligro',
+                                'info' => 'Información',
+                            ])
+                            ->helperText('Color visual para identificar el estado en tablas y badges.'),
+                        Forms\Components\TextInput::make('icon')
+                            ->label('Icono')
+                            ->maxLength(255)
+                            ->hint('Utiliza Heroicons (ej., "heroicon-o-clock")')
+                            ->helperText('Icono visual que acompaña el estado en la interfaz.'),
+                        Forms\Components\Toggle::make('is_default')
+                            ->label('Estado por defecto')
+                            ->helperText('Marca este como el estado inicial para todos los documentos nuevos'),
+                        Forms\Components\Toggle::make('is_complete')
+                            ->label('Estado de finalización')
+                            ->helperText('Marca este estado como un estado final exitoso'),
+                    ])
+                    ->columns(2)
+                    ->aside(),
 
-                Forms\Components\Select::make('color')
-                    ->label('Color')
-                    ->required()
-                    ->options([
-                        'primary' => 'Primario',
-                        'success' => 'Éxito',
-                        'warning' => 'Advertencia',
-                        'danger' => 'Peligro',
-                        'info' => 'Información',
-                    ]),
-
-                Forms\Components\TextInput::make('icon')
-                    ->label('Icono')
-                    ->maxLength(255)
-                    ->hint('Utiliza Heroicons (ej., "heroicon-o-clock")'),
-
-                Forms\Components\Toggle::make('is_default')
-                    ->label('Estado por defecto')
-                    ->helperText('Marca este como el estado inicial para todos los documentos nuevos'),
-
-                Forms\Components\Toggle::make('is_complete')
-                    ->label('Estado de finalización')
-                    ->helperText('Marca este estado como un estado final exitoso'),
-
-                Forms\Components\Select::make('next_statuses')
-                    ->label('Estados siguientes')
-                    ->multiple()
-                    ->relationship('next_statuses', 'name')
-                    ->preload()
-                    ->helperText('Selecciona a qué estados puede transicionar este estado'),
+                \Filament\Forms\Components\Section::make('Transiciones')
+                    ->description('Configura a qué estados puede transicionar este estado de documento.')
+                    ->schema([
+                        Forms\Components\Select::make('next_statuses')
+                            ->label('Estados siguientes')
+                            ->multiple()
+                            ->relationship('next_statuses', 'name')
+                            ->preload()
+                            ->helperText('Selecciona a qué estados puede transicionar este estado'),
+                    ])
+                    ->columns(1)
+                    ->collapsible(),
             ]);
     }
 
@@ -77,18 +88,30 @@ class DocumentStatusResource extends Resource
                     ->label('Nombre')
                     ->searchable()
                     ->sortable()
+                    ->badge()
                     ->color(fn ($record) => $record->color)
-                    ->icon(fn ($record) => $record->icon),
+                    ->icon(fn ($record) => $record->icon)
+                    ->tooltip(fn ($record) => $record->name.' ('.($record->is_default ? 'Por defecto' : 'Transición').')'),
 
                 Tables\Columns\IconColumn::make('is_default')
                     ->label('Por defecto')
                     ->boolean()
-                    ->sortable(),
+                    ->sortable()
+                    ->tooltip('¿Es el estado inicial por defecto?'),
 
                 Tables\Columns\IconColumn::make('is_complete')
                     ->label('Completado')
                     ->boolean()
-                    ->sortable(),
+                    ->sortable()
+                    ->tooltip('¿Es un estado final exitoso?'),
+
+                Tables\Columns\TextColumn::make('next_statuses.name')
+                    ->label('Transiciones posibles')
+                    ->badge()
+                    ->color('info')
+                    ->formatStateUsing(fn ($state) => is_array($state) ? implode(', ', $state) : $state)
+                    ->tooltip('Estados a los que puede transicionar este estado')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creado en')

@@ -117,4 +117,25 @@ class User extends Authenticatable
     {
         return $this->hasMany(ProviderDocument::class);
     }
+
+    /**
+     * Get the branches that this user belongs to.
+     *
+     * This defines a many-to-many relationship where a user can belong
+     * to multiple branches, and a branch can have multiple users.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<Branch>
+     */
+    public function branches(): BelongsToMany
+    {
+        return $this->belongsToMany(Branch::class)->withPivot('is_primary')->withTimestamps();
+    }
+
+    /**
+     * Get the primary branch for this user.
+     */
+    public function primaryBranch(): ?Branch
+    {
+        return $this->branches()->wherePivot('is_primary', true)->first();
+    }
 }

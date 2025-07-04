@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('document_type_id')->constrained()->cascadeOnDelete();
             $table->foreignId('provider_type_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
-            $table->unique(['document_type_id', 'provider_type_id']);
+            $table->unique(['document_type_id', 'provider_type_id'], 'doc_type_provider_type_unique');
         });
     }
 

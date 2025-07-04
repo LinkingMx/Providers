@@ -6,13 +6,13 @@ use Filament\Pages\Page;
 
 class ProviderDashboard extends Page
 {
-    protected static string $route = '/mi-panel';
+    protected static string $route = '/documentacion';
 
-    protected static ?string $navigationIcon = 'heroicon-o-home';
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
-    protected static ?string $navigationLabel = 'Mi Panel';
+    protected static ?string $navigationLabel = 'Documentación';
 
-    protected static ?string $title = 'Mi Panel de Documentos';
+    protected static ?string $title = 'Documentación de proveedor';
 
     protected static ?int $navigationSort = -10;
 

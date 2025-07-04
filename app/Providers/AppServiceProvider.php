@@ -7,16 +7,12 @@ use App\Models\User;
 use App\Observers\DocumentTypeObserver;
 use App\Observers\UserObserver;
 use App\Policies\ActivityPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Activitylog\Models\Activity;
 
 class AppServiceProvider extends ServiceProvider
 {
-    protected $policies = [
-        // Update `Activity::class` with the one defined in `config/activitylog.php`
-        Activity::class => ActivityPolicy::class,
-    ];
-
     /**
      * Register any application services.
      */
@@ -30,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(Activity::class, ActivityPolicy::class);
         User::observe(UserObserver::class);
         DocumentType::observe(DocumentTypeObserver::class);
     }

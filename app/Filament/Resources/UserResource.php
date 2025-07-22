@@ -73,6 +73,14 @@ class UserResource extends Resource
                             ->preload()
                             ->live()
                             ->helperText('Selecciona los roles que tendrá este usuario en el sistema'),
+                        Forms\Components\Select::make('branches')
+                            ->label('Sucursales')
+                            ->relationship('branches', 'name', fn ($query) => $query->where('is_active', true))
+                            ->multiple()
+                            ->searchable()
+                            ->preload()
+                            ->columnSpanFull()
+                            ->helperText('Sucursales a las que pertenece el usuario. Solo sucursales activas están disponibles.'),
                     ])
                     ->columns(2)
                     ->aside(),
@@ -151,6 +159,15 @@ class UserResource extends Resource
                     ->color('info')
                     ->toggleable(),
 
+                Tables\Columns\TextColumn::make('branches.name')
+                    ->label('Sucursales')
+                    ->badge()
+                    ->color('info')
+                    ->separator(',')
+                    ->placeholder('Sin asignar')
+                    ->sortable()
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('email_verified_at')
                     ->label('Email verificado')
                     ->dateTime()
@@ -175,6 +192,12 @@ class UserResource extends Resource
                     ->label('Filtrar por rol')
                     ->relationship('roles', 'name')
                     ->multiple()
+                    ->preload(),
+
+                Tables\Filters\SelectFilter::make('branches')
+                    ->label('Filtrar por sucursal')
+                    ->relationship('branches', 'name')
+                    ->searchable()
                     ->preload(),
 
                 Tables\Filters\Filter::make('verified')

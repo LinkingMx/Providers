@@ -99,12 +99,26 @@ class EditUser extends EditRecord
      * This method handles post-update logic including:
      * - Automatic assignment of document requirements when Provider role is assigned
      * - Automatic removal of document requirements when Provider role is removed
+     * - Sending welcome email when Provider role is assigned for the first time
      */
     protected function afterSave(): void
     {
-        if ($this->record->hasRole('Provider')) {
+        $hasProviderRole = $this->record->hasRole('Provider');
+        $hadProviderRole = $this->record->getOriginal() ? 
+            $this->record->newQuery()->find($this->record->id)->hasRole('Provider') : false;
+
+        if ($hasProviderRole) {
             // User HAS Provider role - assign documents. The job will not re-assign if they already exist.
             \App\Jobs\AssignProviderDocumentsJob::dispatch($this->record->fresh());
+
+            // If this is the first time the user gets the Provider role, send welcome email
+            if (!$hadProviderRole) {
+                \Illuminate\Support\Facades\Log::info('[EditUser] Provider role assigned for first time. Dispatching welcome email.', [
+                    'user_id' => $this->record->id, 
+                    'email' => $this->record->email
+                ]);
+                \App\Jobs\SendProviderWelcomeEmail::dispatch($this->record->fresh());
+            }
         } else {
             // User DOES NOT have Provider role - remove all document requirements and profile
             if ($this->record->documentRequirements()->count() > 0) {

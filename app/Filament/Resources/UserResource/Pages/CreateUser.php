@@ -80,6 +80,10 @@ class CreateUser extends CreateRecord
             // The job itself will handle checking for the provider_type_id and active documents.
             \Illuminate\Support\Facades\Log::debug('[CreateUser] User has provider role. Dispatching AssignProviderDocumentsJob.', ['user_id' => $user->id, 'provider_type_id' => $providerTypeId]);
             \App\Jobs\AssignProviderDocumentsJob::dispatch($user->fresh());
+
+            // Dispatch the welcome email job
+            \Illuminate\Support\Facades\Log::info('[CreateUser] Dispatching welcome email for new provider.', ['user_id' => $user->id, 'email' => $user->email]);
+            \App\Jobs\SendProviderWelcomeEmail::dispatch($user->fresh());
         }
     }
 

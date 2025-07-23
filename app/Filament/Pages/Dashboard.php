@@ -22,6 +22,22 @@ class Dashboard extends BaseDashboard
     }
 
     /**
+     * Additional redirect logic when mounting the dashboard
+     */
+    public function mount(): void
+    {
+        // Double-check and redirect Providers as a safety measure
+        if (auth()->check() && auth()->user()->hasRole('Provider')) {
+            \Illuminate\Support\Facades\Log::info('[Dashboard] Provider user attempted to access admin dashboard, redirecting to documentacion', [
+                'user_id' => auth()->id(),
+                'email' => auth()->user()->email
+            ]);
+            
+            redirect('/admin/documentacion');
+        }
+    }
+
+    /**
      * Override navigation label for clarity
      */
     public static function getNavigationLabel(): string

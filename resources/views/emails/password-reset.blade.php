@@ -6,6 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recuperación de Contraseña - Portal de Proveedores</title>
     <style>
+        :root {
+            /* Definimos colores para fácil manejo en modo oscuro */
+            --bg-light: #f8fafc;
+            --container-bg-light: #ffffff;
+            --text-light: #333;
+            --primary-color: #857151;
+            --text-secondary-light: #4a5568;
+
+            --bg-dark: #1a1a1a;
+            --container-bg-dark: #2d2d2d;
+            --text-dark: #e0e0e0;
+            --text-secondary-dark: #b0b0b0;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -15,20 +29,22 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
-            color: #333;
-            background-color: #f8fafc;
+            color: var(--text-light);
+            background-color: var(--bg-light);
         }
 
         .email-container {
             max-width: 600px;
             margin: 0 auto;
-            background: white;
+            background-color: var(--container-bg-light);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
+        /* CORREGIDO: Fallback para gradiente */
         .header {
+            background-color: #857151;
             background: linear-gradient(135deg, #857151 0%, #6e5d48 100%);
-            color: white;
+            color: white !important;
             padding: 2rem;
             text-align: center;
         }
@@ -38,6 +54,11 @@
             height: auto;
             margin-bottom: 1rem;
             filter: brightness(0) invert(1);
+        }
+
+        .header h1,
+        .header p {
+            color: white !important;
         }
 
         .header h1 {
@@ -53,18 +74,19 @@
 
         .content {
             padding: 2rem;
+            background-color: var(--container-bg-light);
         }
 
         .greeting {
             font-size: 1.5rem;
             font-weight: 600;
-            color: #857151;
+            color: var(--primary-color);
             margin-bottom: 1.5rem;
         }
 
         .intro {
             font-size: 1.1rem;
-            color: #4a5568;
+            color: var(--text-secondary-light);
             margin-bottom: 2rem;
             line-height: 1.6;
         }
@@ -102,10 +124,12 @@
             margin: 2rem 0;
         }
 
+        /* CORREGIDO: Fallback para gradiente */
         .cta-button {
             display: inline-block;
+            background-color: #857151;
             background: linear-gradient(135deg, #857151 0%, #6e5d48 100%);
-            color: white;
+            color: white !important;
             text-decoration: none;
             padding: 1rem 2rem;
             border-radius: 12px;
@@ -116,6 +140,7 @@
         }
 
         .cta-button:hover {
+            background-color: #6e5d48;
             background: linear-gradient(135deg, #6e5d48 0%, #57493a 100%);
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(133, 113, 81, 0.4);
@@ -129,9 +154,21 @@
         }
 
         .info-section h3 {
-            color: #857151;
+            color: var(--primary-color);
             font-size: 1.2rem;
             margin-bottom: 1rem;
+        }
+
+        .info-item strong,
+        .footer .contact-item strong {
+            color: var(--primary-color);
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-item span,
+        .footer .contact-item span {
+            color: var(--text-secondary-light);
         }
 
         .info-grid {
@@ -140,31 +177,21 @@
             gap: 1rem;
         }
 
-        .info-item {
-            text-align: center;
-        }
-
-        .info-item strong {
-            color: #857151;
-            display: block;
-            margin-bottom: 0.25rem;
-        }
-
         .footer {
             background-color: #f8f9fa;
             padding: 2rem;
             text-align: center;
-            border-top: 3px solid #857151;
+            border-top: 3px solid var(--primary-color);
         }
 
         .footer h3 {
-            color: #857151;
+            color: var(--primary-color);
             font-size: 1.2rem;
             margin-bottom: 1rem;
         }
 
         .footer p {
-            color: #857151;
+            color: var(--primary-color);
             font-size: 14px;
             margin-top: 1rem;
         }
@@ -175,16 +202,6 @@
             gap: 2rem;
             margin-bottom: 1.5rem;
             flex-wrap: wrap;
-        }
-
-        .footer .contact-item {
-            text-align: center;
-        }
-
-        .footer .contact-item strong {
-            color: #857151;
-            display: block;
-            margin-bottom: 0.25rem;
         }
 
         .expiry-info {
@@ -214,28 +231,72 @@
                 margin: 0;
                 box-shadow: none;
             }
+        }
 
-            .header,
-            .content,
+        /********************************************/
+        /* NUEVO: ESTILOS MODO OSCURO         */
+        /********************************************/
+        @media (prefers-color-scheme: dark) {
+
+            body,
+            .content {
+                background-color: var(--bg-dark) !important;
+                color: var(--text-dark) !important;
+            }
+
+            .email-container,
+            .info-section,
             .footer {
-                padding: 1.5rem;
+                background-color: var(--container-bg-dark) !important;
+                box-shadow: none !important;
             }
 
-            .header h1 {
-                font-size: 1.5rem;
+            .intro,
+            .info-item span,
+            .footer .contact-item span {
+                color: var(--text-secondary-dark) !important;
             }
 
-            .greeting {
-                font-size: 1.3rem;
+            p,
+            h2,
+            h3,
+            h4,
+            strong {
+                color: var(--text-dark) !important;
             }
 
-            .intro {
-                font-size: 1rem;
+            .greeting,
+            .info-section h3,
+            .info-item strong,
+            .footer h3,
+            .footer .contact-item strong,
+            .footer p {
+                color: #e8d5b1 !important;
+                /* Un tono más claro del color primario */
             }
 
-            .footer .contact-info {
-                flex-direction: column;
-                gap: 1rem;
+            .security-alert {
+                background-color: #4d3c11 !important;
+                border-color: #a47e27 !important;
+                border-left-color: #f39c12 !important;
+            }
+
+            .security-alert h4,
+            .security-alert p,
+            .security-alert svg {
+                color: #fce18d !important;
+            }
+
+            .expiry-info {
+                background-color: #1c3d5a !important;
+                border-color: #3b7cb6 !important;
+                border-left-color: #64b5f6 !important;
+            }
+
+            .expiry-info h4,
+            .expiry-info p,
+            .expiry-info svg {
+                color: #bbdefb !important;
             }
         }
     </style>
@@ -243,14 +304,12 @@
 
 <body>
     <div class="email-container">
-        <!-- Header -->
         <div class="header">
             <img src="{{ asset('images/costeno_logo.svg') }}" alt="Grupo Costeño" class="logo">
             <h1>Portal de Proveedores</h1>
             <p>Grupo Costeño</p>
         </div>
 
-        <!-- Content -->
         <div class="content">
             <h2 class="greeting">¡Hola {{ $user->name }}!</h2>
 
@@ -322,7 +381,6 @@
             </p>
         </div>
 
-        <!-- Footer -->
         <div class="footer">
             <h3>Soporte y Contacto</h3>
             <div class="contact-info">

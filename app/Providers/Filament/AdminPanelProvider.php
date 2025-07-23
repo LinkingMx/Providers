@@ -63,9 +63,9 @@ class AdminPanelProvider extends PanelProvider
                     Log::info('User logged in: '.$user->email.' with roles: '.implode(', ', $user->getRoleNames()->toArray()));
 
                     if ($user->hasRole('Provider')) {
-                        Log::info('Redirecting Provider user to /admin/provider-dashboard');
+                        Log::info('Redirecting Provider user to /admin/documentacion');
 
-                        return '/admin/provider-dashboard';
+                        return '/admin/documentacion';
                     }
                 }
 
@@ -96,6 +96,7 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                \App\Http\Middleware\RedirectProviderToDashboard::class,
             ])
             ->plugins([
                 FilamentShieldPlugin::make(),

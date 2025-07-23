@@ -26,9 +26,11 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
+        /* CORREGIDO: Se agregó un background-color de respaldo */
         .header {
+            background-color: #857151;
             background: linear-gradient(135deg, #857151 0%, #6e5d48 100%);
-            color: white;
+            color: white !important;
             padding: 2rem;
             text-align: center;
         }
@@ -44,11 +46,13 @@
             font-size: 2rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
+            color: white !important;
         }
 
         .header p {
             font-size: 1.1rem;
             opacity: 0.9;
+            color: white !important;
         }
 
         .content {
@@ -113,10 +117,12 @@
             margin-bottom: 2rem;
         }
 
+        /* CORREGIDO: Se agregó un background-color de respaldo */
         .cta-button {
             display: inline-block;
-            background: linear-gradient(135deg, #857151 0%, #6e5d48 100%);
-            color: white;
+            background-color: #857151 !important;
+            background: linear-gradient(135deg, #857151 0%, #6e5d48 100%) !important;
+            color: white !important;
             padding: 1rem 2rem;
             text-decoration: none;
             border-radius: 6px;
@@ -124,12 +130,21 @@
             font-size: 1.1rem;
             transition: all 0.3s ease;
             box-shadow: 0 4px 6px -1px rgba(133, 113, 81, 0.25);
+            border: 2px solid #857151;
         }
 
         .cta-button:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 15px -3px rgba(133, 113, 81, 0.3);
-            background: linear-gradient(135deg, #6e5d48 0%, #57493a 100%);
+            background-color: #6e5d48 !important;
+            background: linear-gradient(135deg, #6e5d48 0%, #57493a 100%) !important;
+            color: white !important;
+            border-color: #6e5d48;
+        }
+
+        .cta-button:visited,
+        .cta-button:active {
+            color: white !important;
         }
 
         .next-steps {
@@ -247,16 +262,16 @@
         $iconSize = 18;
     @endphp
     <div class="email-container">
-        <!-- Header -->
-        <div class="header">
-            <img src="{{ asset('images/costeno_logo.svg') }}" alt="Costeño Logo" class="logo">
-            <h1>¡Bienvenido!</h1>
-            <p>Tu acceso al Portal de Proveedores está listo</p>
+        <div class="header"
+            style="background-color: #857151; background: linear-gradient(135deg, #857151 0%, #6e5d48 100%) !important; padding: 2rem; text-align: center;">
+            <img src="{{ url('images/costeno_logo.svg') }}" alt="Costeño Logo" class="logo">
+            <h1 style="color: white !important; font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">¡Bienvenido!
+            </h1>
+            <p style="font-size: 1.1rem; opacity: 0.9; color: white !important;">Tu acceso al Portal de Proveedores está
+                listo</p>
         </div>
 
-        <!-- Content -->
         <div class="content">
-            <!-- Welcome Message -->
             <div class="welcome-message">
                 <h2>¡Hola, {{ $user->name }}!</h2>
                 <p>Nos complace darte la bienvenida a <strong>Proveedores de Costeno</strong>, nuestro portal
@@ -265,7 +280,6 @@
                     que hemos preparado para ti.</p>
             </div>
 
-            <!-- Provider Information -->
             <div class="provider-info">
                 <h3 style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
                     <span style="display:inline-block;vertical-align:middle;">
@@ -308,24 +322,20 @@
                 @endif
             </div>
 
-            <!-- Call to Action -->
             <div class="cta-section">
                 <a href="{{ url('/admin') }}" class="cta-button"
-                    style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    style="display: inline-flex !important; align-items: center; justify-content: center; gap: 0.5rem; background-color: #857151; background: linear-gradient(135deg, #857151 0%, #6e5d48 100%) !important; color: white !important; text-decoration: none !important; border: 2px solid #857151 !important; padding: 1rem 2rem; border-radius: 6px; font-weight: 600; font-size: 1.1rem;">
                     <span style="display:inline-block;vertical-align:middle;">
                         <svg width="{{ $iconSize }}" height="{{ $iconSize }}" viewBox="0 0 20 20"
                             fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M10 3V17" stroke="{{ $iconColor }}" stroke-width="1.5"
-                                stroke-linecap="round" />
-                            <path d="M5 8L10 3L15 8" stroke="{{ $iconColor }}" stroke-width="1.5"
-                                stroke-linecap="round" />
+                            <path d="M10 3V17" stroke="white" stroke-width="1.5" stroke-linecap="round" />
+                            <path d="M5 8L10 3L15 8" stroke="white" stroke-width="1.5" stroke-linecap="round" />
                         </svg>
                     </span>
-                    Acceder al Portal
+                    <span style="color: white !important;">Acceder al Portal</span>
                 </a>
             </div>
 
-            <!-- Next Steps -->
             <div class="next-steps">
                 <h3 style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
                     <span style="display:inline-block;vertical-align:middle;">
@@ -345,11 +355,12 @@
                 <ul class="steps-list">
                     <li>
                         <span class="step-number">1</span>
-                        <span>Inicia sesión con tu correo electrónico y contraseña</span>
+                        <span>Haz click en el botón superior "Acceder al portal"</span>
                     </li>
                     <li>
                         <span class="step-number">2</span>
-                        <span>Completa tu perfil y revisa tus datos</span>
+                        <span>Despues, haz click en "Ha olvidado su contraseña" para que definas una nueva
+                            contraseña</span>
                     </li>
                     <li>
                         <span class="step-number">3</span>
@@ -359,10 +370,15 @@
                         <span class="step-number">4</span>
                         <span>Mantén tus documentos actualizados para evitar vencimientos</span>
                     </li>
+                    <li>
+                        <span class="step-number">5</span>
+                        <span>Te recordamos que para continuar con tu registro es indispensable subir todos los
+                            documentos a la plataforma.
+                        </span>
+                    </li>
                 </ul>
             </div>
 
-            <!-- Contact Information -->
             <div class="contact-info">
                 <h3 style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
                     <span style="display:inline-block;vertical-align:middle;">
@@ -381,7 +397,6 @@
             </div>
         </div>
 
-        <!-- Footer -->
         <div class="footer">
             <p>&copy; 2025 ProveedoresCosteno. Todos los derechos reservados.</p>
             <p>

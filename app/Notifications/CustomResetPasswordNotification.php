@@ -2,57 +2,67 @@
 
 namespace App\Notifications;
 
+use Illuminate\Auth\Notifications\ResetPassword as BaseResetPassword;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Notification;
-use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Support\Facades\Config;
 
-class CustomResetPasswordNotification extends ResetPassword implements ShouldQueue
+class CustomResetPasswordNotification extends BaseResetPassword implements ShouldQueue
 {
     use Queueable;
+
+    public string $url;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct($token)
+    public function __construct(string $token)
     {
         parent::__construct($token);
+        
+        // Set up queue connection
+        $this->onQueue('default');
     }
 
     /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
+     * Get the reset URL for the given notifiable.
      */
-    public function via($notifiable): array
+    protected function resetUrl($notifiable): string
     {
-        return ['mail'];
+        if (isset($this->url)) {
+            return $this->url;
+        }
+
+        // For Filament, use the Filament panel reset URL
+        $panelId = Config::get('filament.default_panel', 'admin');
+        
+        return url(route('filament.' . $panelId . '.auth.password-reset.reset', [
+            'token' => $this->token,
+            'email' => $notifiable->getEmailForPasswordReset(),
+        ], false));
     }
 
     /**
-     * Get the mail representation of the notification.
+     * Build the mail representation of the notification.
      */
     public function toMail($notifiable): MailMessage
     {
-        $url = route('filament.admin.auth.password-reset.reset', [
-            'token' => $this->token,
-            'email' => $notifiable->getEmailForPasswordReset(),
-        ]);
-
+        $resetUrl = $this->resetUrl($notifiable);
+        
         return (new MailMessage)
-            ->subject('Recuperación de Contraseña - Portal de Proveedores')
+            ->subject('Recuperar Contraseña - Grupo Costeño')
             ->view('emails.password-reset', [
                 'user' => $notifiable,
-                'url' => $url,
+                'resetUrl' => $resetUrl,
+                'url' => $resetUrl, // Para compatibilidad con el template anterior
                 'token' => $this->token,
+                'expireMinutes' => Config::get('auth.passwords.users.expire', 60),
             ]);
     }
 
     /**
      * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
      */
     public function toArray($notifiable): array
     {

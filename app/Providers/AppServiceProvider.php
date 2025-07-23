@@ -26,8 +26,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::policy(Activity::class, ActivityPolicy::class);
-        User::observe(UserObserver::class);
-        DocumentType::observe(DocumentTypeObserver::class);
+        // Override Filament's password reset notification
+        $this->app->bind(
+            \Filament\Notifications\Auth\ResetPassword::class,
+            \App\Notifications\CustomResetPasswordNotification::class
+        );
+
+        // Manually register Filament auth components to fix Livewire registration issue
+        if (class_exists(\Livewire\Livewire::class)) {
+            \Livewire\Livewire::component(
+                'filament.pages.auth.password-reset.request-password-reset',
+                \Filament\Pages\Auth\PasswordReset\RequestPasswordReset::class
+            );
+            
+            \Livewire\Livewire::component(
+                'filament.pages.auth.password-reset.reset-password',
+                \Filament\Pages\Auth\PasswordReset\ResetPassword::class
+            );
+        }
     }
 }

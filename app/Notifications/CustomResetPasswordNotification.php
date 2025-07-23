@@ -25,7 +25,7 @@ class CustomResetPasswordNotification extends ResetPassword implements ShouldQue
      *
      * @return array<int, string>
      */
-    public function via(object $notifiable): array
+    public function via($notifiable): array
     {
         return ['mail'];
     }
@@ -33,22 +33,20 @@ class CustomResetPasswordNotification extends ResetPassword implements ShouldQue
     /**
      * Get the mail representation of the notification.
      */
-    public function toMail(object $notifiable): MailMessage
+    public function toMail($notifiable): MailMessage
     {
-        $url = url(config('app.url').route('password.reset', [
+        $url = route('filament.admin.auth.password-reset.reset', [
             'token' => $this->token,
             'email' => $notifiable->getEmailForPasswordReset(),
-        ], false));
+        ]);
 
         return (new MailMessage)
             ->subject('Recuperación de Contraseña - Portal de Proveedores')
-            ->greeting('¡Hola ' . $notifiable->name . '!')
-            ->line('Recibiste este correo porque se solicitó una recuperación de contraseña para tu cuenta en el Portal de Proveedores de Grupo Costeño.')
-            ->line('Este enlace de recuperación expirará en ' . config('auth.passwords.'.config('auth.defaults.passwords').'.expire') . ' minutos.')
-            ->action('Restablecer Contraseña', $url)
-            ->line('Si no solicitaste una recuperación de contraseña, puedes ignorar este correo.')
-            ->line('**Aviso de Seguridad:** Por tu seguridad, nunca compartas este enlace con nadie más. Si sospechas que alguien más tiene acceso a tu cuenta, contáctanos inmediatamente.')
-            ->salutation('Saludos,<br>Equipo de Grupo Costeño');
+            ->view('emails.password-reset', [
+                'user' => $notifiable,
+                'url' => $url,
+                'token' => $this->token,
+            ]);
     }
 
     /**
@@ -56,7 +54,7 @@ class CustomResetPasswordNotification extends ResetPassword implements ShouldQue
      *
      * @return array<string, mixed>
      */
-    public function toArray(object $notifiable): array
+    public function toArray($notifiable): array
     {
         return [
             'token' => $this->token,

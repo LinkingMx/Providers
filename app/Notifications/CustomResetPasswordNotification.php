@@ -34,13 +34,11 @@ class CustomResetPasswordNotification extends BaseResetPassword implements Shoul
             return $this->url;
         }
 
-        // For Filament, use the Filament panel reset URL
-        $panelId = Config::get('filament.default_panel', 'admin');
-        
-        return url(route('filament.' . $panelId . '.auth.password-reset.reset', [
+        // Generate the reset URL using Filament's admin panel
+        return url(route('filament.admin.auth.password-reset.reset', [
             'token' => $this->token,
             'email' => $notifiable->getEmailForPasswordReset(),
-        ], false));
+        ]));
     }
 
     /**

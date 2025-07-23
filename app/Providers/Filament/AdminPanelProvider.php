@@ -30,7 +30,6 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->passwordReset()
-            ->emailVerification()
             ->font('Poppins')
             ->brandLogo(fn () => view('filament.admin.logo'))
             ->colors([

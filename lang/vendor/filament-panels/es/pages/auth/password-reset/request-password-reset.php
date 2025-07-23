@@ -33,12 +33,13 @@ return [
     'notifications' => [
 
         'sent' => [
-            'body' => 'Si su cuenta no existe, no recibirá el correo electrónico.',
+            'title' => 'Correo enviado',
+            'body' => 'Si tu cuenta existe, recibirás un correo con las instrucciones para restablecer tu contraseña.',
         ],
 
         'throttled' => [
             'title' => 'Demasiadas solicitudes',
-            'body' => 'Por favor, inténtelo de nuevo en :seconds segundos.',
+            'body' => 'Por seguridad, debes esperar :seconds segundos antes de solicitar nuevamente el restablecimiento de contraseña.',
         ],
 
     ],

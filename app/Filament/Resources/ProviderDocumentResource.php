@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProviderDocumentResource\Pages;
+use App\Mail\DocumentRejected;
 use App\Models\DocumentStatus;
 use App\Models\ProviderDocument;
 use App\Models\User;
@@ -12,6 +13,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -210,11 +212,27 @@ class ProviderDocumentResource extends Resource
                                 'rejection_reason' => $data['rejection_reason'],
                             ]);
 
-                            Notification::make()
-                                ->warning()
-                                ->title('Documento Rechazado')
-                                ->body("El documento '{$record->documentType->name}' ha sido rechazado.")
-                                ->send();
+                            // Enviar email de notificación al proveedor
+                            try {
+                                Mail::to($record->user->email)
+                                    ->queue(new DocumentRejected(
+                                        $record->user,
+                                        $record,
+                                        $data['rejection_reason']
+                                    ));
+                                
+                                Notification::make()
+                                    ->warning()
+                                    ->title('Documento Rechazado')
+                                    ->body("El documento '{$record->documentType->name}' ha sido rechazado y se ha notificado al proveedor por email.")
+                                    ->send();
+                            } catch (\Exception $e) {
+                                Notification::make()
+                                    ->warning()
+                                    ->title('Documento Rechazado')
+                                    ->body("El documento ha sido rechazado pero hubo un error al enviar el email: " . $e->getMessage())
+                                    ->send();
+                            }
                         }
                     }),
 

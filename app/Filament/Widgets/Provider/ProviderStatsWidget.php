@@ -30,40 +30,66 @@ class ProviderStatsWidget extends BaseWidget
      */
     protected function getStats(): array
     {
-        // Get the currently authenticated user (provider)
-        // This assumes the user is authenticated and has the provider role
         $user = Auth::user();
 
-        // Calculate total required documents, excluding 'No Aplica' status
-        // Documents with 'No Aplica' status are not considered mandatory
-        // and shouldn't count towards the completion percentage
-        $totalRequired = \App\Models\ProviderDocument::where('user_id', $user->id)
-            ->whereHas('documentStatus', function ($q) {
-                $q->where('name', '!=', 'No Aplica');
-            })
+        // Total de documentos asignados al proveedor
+        $totalDocuments = \App\Models\ProviderDocument::where('user_id', $user->id)->count();
+
+        // Documentos pendientes de cargar (sin archivo)
+        $pendingUpload = \App\Models\ProviderDocument::where('user_id', $user->id)
+            ->whereNull('file_path')
             ->count();
 
-        // Calculate completed documents using the is_complete flag
-        // Only documents with statuses marked as complete (like 'Aprobado')
-        // are considered successfully completed for compliance purposes
-        $completedCount = \App\Models\ProviderDocument::where('user_id', $user->id)
+        // Documentos aprobados
+        $approvedCount = \App\Models\ProviderDocument::where('user_id', $user->id)
             ->whereHas('documentStatus', function ($q) {
                 $q->where('is_complete', true);
             })
             ->count();
 
-        // Calculate completion percentage with division by zero protection
-        // If no documents are required, consider it 100% complete
-        // Otherwise, calculate the actual percentage and round to nearest integer
-        $percentage = ($totalRequired > 0) ? round(($completedCount / $totalRequired) * 100) : 100;
+        // Documentos rechazados
+        $rejectedCount = \App\Models\ProviderDocument::where('user_id', $user->id)
+            ->whereHas('documentStatus', function ($q) {
+                $q->where('name', 'Rechazado');
+            })
+            ->count();
+
+        // Documentos en revisión (cargados pero no aprobados ni rechazados)
+        $inReviewCount = \App\Models\ProviderDocument::where('user_id', $user->id)
+            ->whereNotNull('file_path')
+            ->whereHas('documentStatus', function ($q) {
+                $q->where('is_complete', false)
+                  ->where('name', '!=', 'Rechazado');
+            })
+            ->count();
+
+        // Calcular porcentaje de cumplimiento (aprobados vs total requerido)
+        $completionPercentage = ($totalDocuments > 0) 
+            ? round(($approvedCount / $totalDocuments) * 100) 
+            : 0;
+
+        // Calcular porcentaje de aprobación (aprobados vs procesados)
+        $processedCount = $approvedCount + $rejectedCount;
+        $approvalRate = ($processedCount > 0) 
+            ? round(($approvedCount / $processedCount) * 100) 
+            : 0;
 
         return [
-            // Single stat showing document completion progress
-            Stat::make('Progreso de Documentación', "{$percentage}%")
-                ->description("{$completedCount} de {$totalRequired} documentos aprobados")
+            Stat::make('Documentos Pendientes', $pendingUpload)
+                ->description("De {$totalDocuments} documentos requeridos")
+                ->descriptionIcon('heroicon-o-document-arrow-up')
+                ->color($pendingUpload > 0 ? 'warning' : 'success'),
+            
+            Stat::make('Estado de Documentación', "{$completionPercentage}%")
+                ->description("{$approvedCount} aprobados, {$rejectedCount} rechazados, {$inReviewCount} en revisión")
                 ->descriptionIcon('heroicon-o-shield-check')
-                ->color($this->getProgressColor($percentage))
+                ->color($this->getProgressColor($completionPercentage))
                 ->chart($this->getProgressTrendData($user)),
+            
+            Stat::make('Tasa de Aprobación', "{$approvalRate}%")
+                ->description("De documentos procesados")
+                ->descriptionIcon('heroicon-o-check-circle')
+                ->color($approvalRate >= 80 ? 'success' : ($approvalRate >= 50 ? 'warning' : 'danger')),
         ];
     }
 
@@ -105,29 +131,25 @@ class ProviderStatsWidget extends BaseWidget
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i)->endOfDay();
 
-            // Get total required documents at this point in time
-            $totalRequired = \App\Models\ProviderDocument::where('user_id', $user->id)
-                ->whereHas('documentStatus', function ($q) {
-                    $q->where('name', '!=', 'No Aplica');
-                })
+            // Total de documentos asignados hasta esta fecha
+            $totalDocuments = \App\Models\ProviderDocument::where('user_id', $user->id)
                 ->where('created_at', '<=', $date)
                 ->count();
 
-            if ($totalRequired === 0) {
-                $data[] = 100;
-
+            if ($totalDocuments === 0) {
+                $data[] = 0;
                 continue;
             }
 
-            // Get completed documents at this point in time
-            $completedCount = \App\Models\ProviderDocument::where('user_id', $user->id)
+            // Documentos aprobados hasta esta fecha
+            $approvedCount = \App\Models\ProviderDocument::where('user_id', $user->id)
                 ->whereHas('documentStatus', function ($q) {
                     $q->where('is_complete', true);
                 })
                 ->where('created_at', '<=', $date)
                 ->count();
 
-            $percentage = round(($completedCount / $totalRequired) * 100);
+            $percentage = round(($approvedCount / $totalDocuments) * 100);
             $data[] = $percentage;
         }
 

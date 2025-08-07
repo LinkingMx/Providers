@@ -26,6 +26,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register Activity policy for Filament Logger Shield integration
+        Gate::policy(Activity::class, ActivityPolicy::class);
+
         // Override Filament's password reset notification
         $this->app->bind(
             \Filament\Notifications\Auth\ResetPassword::class,

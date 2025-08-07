@@ -27,7 +27,7 @@ class ProviderDocumentResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-document-check';
 
-    protected static ?string $navigationLabel = 'Documentos de Proveedores (test)';
+    protected static ?string $navigationLabel = 'Documentos de Proveedores';
 
     protected static ?string $modelLabel = 'Documento de Proveedor';
 

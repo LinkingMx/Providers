@@ -75,18 +75,18 @@ class ProviderStatsWidget extends BaseWidget
             : 0;
 
         return [
-            Stat::make('Documentos Pendientes', $pendingUpload)
+            Stat::make('Documentos Pendientes 2', $pendingUpload)
                 ->description("De {$totalDocuments} documentos requeridos")
                 ->descriptionIcon('heroicon-o-document-arrow-up')
                 ->color($pendingUpload > 0 ? 'warning' : 'success'),
             
-            Stat::make('Estado de Documentación', "{$completionPercentage}%")
+            Stat::make('Estado de Documentación 2', "{$completionPercentage}%")
                 ->description("{$approvedCount} aprobados, {$rejectedCount} rechazados, {$inReviewCount} en revisión")
                 ->descriptionIcon('heroicon-o-shield-check')
                 ->color($this->getProgressColor($completionPercentage))
                 ->chart($this->getProgressTrendData($user)),
             
-            Stat::make('Tasa de Aprobación', "{$approvalRate}%")
+            Stat::make('Tasa de Aprobación 2', "{$approvalRate}%")
                 ->description("De documentos procesados")
                 ->descriptionIcon('heroicon-o-check-circle')
                 ->color($approvalRate >= 80 ? 'success' : ($approvalRate >= 50 ? 'warning' : 'danger')),

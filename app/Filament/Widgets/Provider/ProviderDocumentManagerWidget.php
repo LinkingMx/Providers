@@ -42,7 +42,7 @@ class ProviderDocumentManagerWidget extends BaseWidget
      * Clearly identifies this section as the provider's personal document
      * requirements, using Spanish for consistent localization.
      */
-    protected static ?string $heading = 'Mis Documentos Requeridos 2';
+    protected static ?string $heading = 'Mis Documentos Requeridos';
 
     /**
      * Configure the document management table for providers.

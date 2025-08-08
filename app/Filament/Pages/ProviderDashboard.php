@@ -10,7 +10,7 @@ class ProviderDashboard extends Page
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
-    protected static ?string $navigationLabel = 'Documentación (test)';
+    protected static ?string $navigationLabel = 'Documentación';
 
     protected static ?string $title = 'Documentación de proveedor';
 

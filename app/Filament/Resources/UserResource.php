@@ -145,7 +145,7 @@ class UserResource extends Resource
                                 ignoreRecord: true
                             )
                             ->rule('regex:/^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/')
-                            ->transform(fn ($value) => strtoupper(trim($value)))
+                            ->dehydrateStateUsing(fn ($state) => $state ? strtoupper(trim($state)) : $state)
                             ->validationMessages([
                                 'required' => 'El RFC es obligatorio para usuarios con rol de Proveedor.',
                                 'unique' => 'Este RFC ya está registrado por otro proveedor.',

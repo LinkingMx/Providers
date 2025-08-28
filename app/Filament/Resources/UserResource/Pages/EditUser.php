@@ -50,6 +50,13 @@ class EditUser extends EditRecord
         $rfc = $data['rfc'] ?? null;
         $businessName = $data['business_name'] ?? null;
         $providerTypeId = $data['provider_type_id'] ?? null;
+        $roles = $data['roles'] ?? [];
+
+        // Validate role assignment permissions using policy
+        $currentUser = auth()->user();
+        if (!$currentUser->can('assignRoles', [User::class, $roles])) {
+            throw new \Illuminate\Auth\Access\AuthorizationException('No tienes permisos para asignar estos roles.');
+        }
 
         unset($data['rfc'], $data['business_name'], $data['provider_type_id']);
 

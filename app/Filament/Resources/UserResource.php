@@ -72,7 +72,51 @@ class UserResource extends Resource
                             ->multiple()
                             ->preload()
                             ->live()
-                            ->helperText('Selecciona los roles que tendrá este usuario en el sistema'),
+                            ->options(function () {
+                                $user = auth()->user();
+                                $allRoles = \Spatie\Permission\Models\Role::pluck('name', 'id');
+                                
+                                // If user is super_admin, show all roles
+                                if ($user && $user->hasRole('super_admin')) {
+                                    return $allRoles;
+                                }
+                                
+                                // If user is Admin, only show Provider role
+                                if ($user && $user->hasRole('Admin')) {
+                                    return $allRoles->filter(function ($name, $id) {
+                                        return $name === 'Provider';
+                                    });
+                                }
+                                
+                                // For other users, return empty (no roles can be assigned)
+                                return collect();
+                            })
+                            ->rules([
+                                function () {
+                                    return function (string $attribute, $value, \Closure $fail) {
+                                        $user = auth()->user();
+                                        $requestedRoles = is_array($value) ? $value : [$value];
+                                        
+                                        if (!$user->can('assignRoles', [User::class, $requestedRoles])) {
+                                            $fail('No tienes permisos para asignar estos roles.');
+                                        }
+                                    };
+                                }
+                            ])
+                            ->helperText(function () {
+                                $user = auth()->user();
+                                if ($user && $user->hasRole('super_admin')) {
+                                    return '🔑 Super Admin: Puedes asignar cualquier rol del sistema.';
+                                } elseif ($user && $user->hasRole('Admin')) {
+                                    return '👨‍💼 Admin: Solo puedes asignar el rol de Proveedor.';
+                                } else {
+                                    return '⚠️ Tu rol actual no permite asignar roles a otros usuarios.';
+                                }
+                            })
+                            ->disabled(function () {
+                                $user = auth()->user();
+                                return !$user || (!$user->hasRole(['super_admin', 'Admin']));
+                            }),
                         Forms\Components\Select::make('branches')
                             ->label('Sucursales')
                             ->relationship('branches', 'name', fn ($query) => $query->where('is_active', true))
@@ -92,7 +136,22 @@ class UserResource extends Resource
                             ->label('RFC')
                             ->maxLength(13)
                             ->minLength(10)
-                            ->helperText('Registro Federal de Contribuyentes (RFC) del proveedor')
+                            ->required(fn (Forms\Get $get): bool => 
+                                collect($get('roles') ?? [])->contains('Provider')
+                            )
+                            ->unique(
+                                table: 'provider_profiles',
+                                column: 'rfc',
+                                ignoreRecord: true
+                            )
+                            ->rule('regex:/^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/')
+                            ->transform(fn ($value) => strtoupper(trim($value)))
+                            ->validationMessages([
+                                'required' => 'El RFC es obligatorio para usuarios con rol de Proveedor.',
+                                'unique' => 'Este RFC ya está registrado por otro proveedor.',
+                                'regex' => 'El formato del RFC no es válido. Debe tener el formato correcto (ej: XAXX010101000).',
+                            ])
+                            ->helperText('Registro Federal de Contribuyentes (RFC) del proveedor. Obligatorio para proveedores.')
                             ->placeholder('Ej: XAXX010101000'),
                         Forms\Components\TextInput::make('business_name')
                             ->label('Razón social')

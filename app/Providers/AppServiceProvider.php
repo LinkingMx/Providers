@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Observers\DocumentTypeObserver;
 use App\Observers\UserObserver;
 use App\Policies\ActivityPolicy;
+use App\Policies\UserPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Activitylog\Models\Activity;
@@ -28,6 +29,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // Register Activity policy for Filament Logger Shield integration
         Gate::policy(Activity::class, ActivityPolicy::class);
+        
+        // Register User policy for role assignment restrictions
+        Gate::policy(User::class, UserPolicy::class);
 
         // Override Filament's password reset notification
         $this->app->bind(

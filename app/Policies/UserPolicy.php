@@ -141,4 +141,38 @@ class UserPolicy
     {
         return $user->can('reorder_user');
     }
+
+    /**
+     * Determine which roles the user can assign to other users.
+     *
+     * @param  \App\Models\User  $user
+     * @param  array  $requestedRoles
+     * @return bool
+     */
+    public function assignRoles(User $user, array $requestedRoles = []): bool
+    {
+        // Super admins can assign any role
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+
+        // Admin users can only assign Provider roles
+        if ($user->hasRole('Admin')) {
+            // Get all role names from the requested roles array
+            $roleNames = collect($requestedRoles)->map(function ($roleId) {
+                return \Spatie\Permission\Models\Role::find($roleId)?->name;
+            })->filter()->toArray();
+
+            // Admin users can only assign Provider roles
+            foreach ($roleNames as $roleName) {
+                if (!in_array($roleName, ['Provider'])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Other users cannot assign any roles
+        return false;
+    }
 }

@@ -24,12 +24,24 @@ class UserPolicy
     /**
      * Determine whether the user can view the model.
      *
-     * @param  \App\Models\User  $user
+     * @param  \App\Models\User  $currentUser
+     * @param  \App\Models\User  $targetUser
      * @return bool
      */
-    public function view(User $user): bool
+    public function view(User $currentUser, User $targetUser): bool
     {
-        return $user->can('view_user');
+        // Super admins can view any user
+        if ($currentUser->hasRole('super_admin')) {
+            return $currentUser->can('view_user');
+        }
+
+        // Admin users can only view Provider users
+        if ($currentUser->hasRole('Admin')) {
+            return $currentUser->can('view_user') && $targetUser->hasRole('Provider');
+        }
+
+        // Other users follow default permissions
+        return $currentUser->can('view_user');
     }
 
     /**
@@ -46,23 +58,47 @@ class UserPolicy
     /**
      * Determine whether the user can update the model.
      *
-     * @param  \App\Models\User  $user
+     * @param  \App\Models\User  $currentUser
+     * @param  \App\Models\User  $targetUser
      * @return bool
      */
-    public function update(User $user): bool
+    public function update(User $currentUser, User $targetUser): bool
     {
-        return $user->can('update_user');
+        // Super admins can update any user
+        if ($currentUser->hasRole('super_admin')) {
+            return $currentUser->can('update_user');
+        }
+
+        // Admin users can only update Provider users
+        if ($currentUser->hasRole('Admin')) {
+            return $currentUser->can('update_user') && $targetUser->hasRole('Provider');
+        }
+
+        // Other users follow default permissions
+        return $currentUser->can('update_user');
     }
 
     /**
      * Determine whether the user can delete the model.
      *
-     * @param  \App\Models\User  $user
+     * @param  \App\Models\User  $currentUser
+     * @param  \App\Models\User  $targetUser
      * @return bool
      */
-    public function delete(User $user): bool
+    public function delete(User $currentUser, User $targetUser): bool
     {
-        return $user->can('delete_user');
+        // Super admins can delete any user
+        if ($currentUser->hasRole('super_admin')) {
+            return $currentUser->can('delete_user');
+        }
+
+        // Admin users can only delete Provider users
+        if ($currentUser->hasRole('Admin')) {
+            return $currentUser->can('delete_user') && $targetUser->hasRole('Provider');
+        }
+
+        // Other users follow default permissions
+        return $currentUser->can('delete_user');
     }
 
     /**

@@ -246,6 +246,15 @@ class UserResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->description(function () {
+                $currentUser = auth()->user();
+                if ($currentUser && $currentUser->hasRole('Admin')) {
+                    return '👨‍💼 Como usuario Admin, solo puedes ver y gestionar usuarios con rol de Proveedor.';
+                } elseif ($currentUser && $currentUser->hasRole('super_admin')) {
+                    return '🔑 Como Super Admin, puedes ver y gestionar todos los usuarios del sistema.';
+                }
+                return null;
+            })
             ->filters([
                 Tables\Filters\SelectFilter::make('roles')
                     ->label('Filtrar por rol')
@@ -316,5 +325,32 @@ class UserResource extends Resource
     {
         // No hacer nada especial aquí, se maneja en la Page
         return $data;
+    }
+
+    /**
+     * Filter users based on current user's role permissions
+     * 
+     * Admin users can only see Provider users
+     * Super admins can see all users
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $currentUser = auth()->user();
+
+        // If current user is super_admin, show all users
+        if ($currentUser && $currentUser->hasRole('super_admin')) {
+            return $query;
+        }
+
+        // If current user is Admin, only show Provider users
+        if ($currentUser && $currentUser->hasRole('Admin')) {
+            return $query->whereHas('roles', function (Builder $roleQuery) {
+                $roleQuery->where('name', 'Provider');
+            });
+        }
+
+        // For other users, return empty query (no access)
+        return $query->whereRaw('1 = 0'); // This ensures no results are returned
     }
 }

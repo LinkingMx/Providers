@@ -63,9 +63,9 @@ class AdminPanelProvider extends PanelProvider
                     Log::info('User logged in: '.$user->email.' with roles: '.implode(', ', $user->getRoleNames()->toArray()));
 
                     if ($user->hasRole('Provider')) {
-                        Log::info('Redirecting Provider user to /admin/documentacion');
+                        Log::info('Redirecting Provider user to /admin/provider-dashboard');
 
-                        return '/admin/documentacion';
+                        return '/admin/provider-dashboard';
                     }
                 }
 

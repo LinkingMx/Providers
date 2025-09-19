@@ -16,23 +16,25 @@ class RedirectProviderToDashboard
     public function handle(Request $request, Closure $next): Response
     {
         // Check if user is authenticated and has Provider role
-        if (auth()->check() && 
-            auth()->user()->hasRole('Provider') && 
-            $request->is('admin') && 
-            !$request->is('admin/documentacion*') &&
+        // Redirect ALL admin routes (except excluded ones) to provider dashboard
+        if (auth()->check() &&
+            auth()->user()->hasRole('Provider') &&
+            $request->is('admin*') &&
+            !$request->is('admin/provider-dashboard*') &&
             !$request->is('admin/logout*') &&
             !$request->is('admin/password-reset*') &&
             !$request->ajax()) {
-            
-            \Illuminate\Support\Facades\Log::info('[RedirectProviderToDashboard] Redirecting Provider user from /admin to /admin/documentacion', [
+
+            \Illuminate\Support\Facades\Log::info('[RedirectProviderToDashboard] Redirecting Provider user to provider dashboard', [
                 'user_id' => auth()->id(),
                 'email' => auth()->user()->email,
-                'current_url' => $request->fullUrl()
+                'from_url' => $request->fullUrl(),
+                'to_url' => '/admin/provider-dashboard'
             ]);
-            
-            return redirect('/admin/documentacion');
+
+            return redirect('/admin/provider-dashboard');
         }
-        
+
         return $next($request);
     }
 }

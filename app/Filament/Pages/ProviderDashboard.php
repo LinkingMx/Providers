@@ -6,7 +6,7 @@ use Filament\Pages\Page;
 
 class ProviderDashboard extends Page
 {
-    protected static string $route = '/documentacion';
+    protected static string $route = '/provider-dashboard';
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 

@@ -35,8 +35,12 @@ php artisan filament:upgrade  # Update Filament assets after package updates
 
 ### Email Testing
 ```bash
-php artisan mail:test smtp email@example.com  # Test SMTP configuration
-php artisan mail:check-config                 # Verify mail configuration
+php artisan mail:test smtp email@example.com          # Test SMTP configuration
+php artisan mail:test provider-welcome email@example.com --user-id=1  # Test provider welcome email
+php artisan mail:check-config                         # Verify mail configuration
+php artisan mail:status                               # Show mail test status
+php artisan mail:test-document-rejected               # Test document rejected email template
+php artisan email:preview                             # Show URLs for email template previews
 ```
 
 ## Architecture & Key Patterns

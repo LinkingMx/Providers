@@ -55,11 +55,19 @@ class ProviderDocumentResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('user_id')
                             ->label('Proveedor')
-                            ->options(
-                                User::whereHas('roles', function ($query) {
+                            ->options(function () {
+                                return User::whereHas('roles', function ($query) {
                                     $query->where('name', 'Provider');
-                                })->pluck('name', 'id')
-                            )
+                                })->with('providerProfile')
+                                ->get()
+                                ->mapWithKeys(function ($user) {
+                                    $label = $user->name;
+                                    if ($user->providerProfile?->business_name) {
+                                        $label .= ' - ' . $user->providerProfile->business_name;
+                                    }
+                                    return [$user->id => $label];
+                                });
+                            })
                             ->required()
                             ->searchable()
                             ->disabled(fn ($record) => $record !== null),
@@ -108,7 +116,13 @@ class ProviderDocumentResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('Proveedor')
+                    ->label('Nombre')
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('user.providerProfile.business_name')
+                    ->label('Razón Social')
+                    ->placeholder('No especificada')
                     ->sortable()
                     ->searchable(),
 
@@ -152,11 +166,20 @@ class ProviderDocumentResource extends Resource
 
                 Tables\Filters\SelectFilter::make('user_id')
                     ->label('Proveedor')
-                    ->options(
-                        User::whereHas('roles', function ($query) {
+                    ->options(function () {
+                        return User::whereHas('roles', function ($query) {
                             $query->where('name', 'Provider');
-                        })->pluck('name', 'id')
-                    )
+                        })->with('providerProfile')
+                        ->get()
+                        ->mapWithKeys(function ($user) {
+                            $label = $user->name;
+                            if ($user->providerProfile?->business_name) {
+                                $label .= ' - ' . $user->providerProfile->business_name;
+                            }
+                            return [$user->id => $label];
+                        });
+                    })
+                    ->searchable()
                     ->preload(),
             ])
             ->actions([

@@ -136,15 +136,14 @@ class UserResource extends Resource
                             ->label('RFC')
                             ->maxLength(13)
                             ->minLength(10)
-                            ->required(fn (Forms\Get $get): bool => 
+                            ->required(fn (Forms\Get $get): bool =>
                                 collect($get('roles') ?? [])->contains('Provider')
                             )
-                            ->unique(
-                                table: 'provider_profiles',
-                                column: 'rfc',
-                                ignoreRecord: true
-                            )
-                            ->rule('regex:/^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/')
+                            ->rules([
+                                fn ($record) => \Illuminate\Validation\Rule::unique('provider_profiles', 'rfc')
+                                    ->ignore($record?->providerProfile?->id),
+                                'regex:/^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/',
+                            ])
                             ->dehydrateStateUsing(fn ($state) => $state ? strtoupper(trim($state)) : $state)
                             ->validationMessages([
                                 'required' => 'El RFC es obligatorio para usuarios con rol de Proveedor.',
